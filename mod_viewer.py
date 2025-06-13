@@ -97,6 +97,24 @@ class ModViewerApp(tk.Tk):
         self.sort_column = None
         self.sort_reverse = False
         self.create_widgets()
+        self.columns = ('name', 'description', 'id', 'type')  # default new order
+    
+    def update_order_and_refresh(self):
+        # Update the columns and refresh the tree and detail panel
+        self.update_columns()
+        self.populate_tree()
+        self.detail_text.delete(1.0, tk.END)
+
+    def update_columns(self):
+        if self.use_new_order.get():
+            self.columns = ('name', 'description', 'id', 'type')
+        else:
+            self.columns = ('type', 'id', 'name', 'description')
+
+        self.tree.config(columns=self.columns)
+        for col in self.columns:
+            self.tree.heading(col, text=col.capitalize(), command=lambda c=col: self.sort_by(c))
+            self.tree.column(col, width=150 if col != 'description' else 400, anchor='w')
     
     def create_widgets(self):
         # Top control bar
@@ -123,6 +141,15 @@ class ModViewerApp(tk.Tk):
         search_entry = tk.Entry(search_frame, textvariable=self.search_var)
         search_entry.pack(side='left', fill='x', expand=True)
 
+        self.use_new_order = tk.BooleanVar(value=True)
+        order_toggle = tk.Checkbutton(
+            search_frame,
+            text="Swap Columns",
+            variable=self.use_new_order,
+            command=self.update_order_and_refresh
+        )
+        order_toggle.pack(side='right', padx=(10, 0))
+
         self.count_label = tk.Label(search_frame, text="Entries: 0", anchor='e', fg='gray', font=('Arial', 10, 'italic'))
         self.count_label.pack(side='right', padx=(10, 0))
 
@@ -132,7 +159,7 @@ class ModViewerApp(tk.Tk):
 
         # Treeview (top)
         tree_frame = tk.Frame(main_pane)
-        columns = ('type', 'id', 'name', 'description')
+        columns = ('name', 'description', 'id', 'type')
 
         scrollbar = ttk.Scrollbar(tree_frame)
         scrollbar.pack(side='right', fill='y')
@@ -197,10 +224,22 @@ class ModViewerApp(tk.Tk):
             if not name:
                 name = 'null'
             description = entry['description'] if entry['description'] else 'null'
-            
-            self.tree.insert('', 'end', iid=idx, values=(
-                entry['type'], entry_id, name, description[:100]
-            ))
+
+            # Build the values list in the right order dynamically
+            values = []
+            for col in self.columns:
+                if col == 'id':
+                    values.append(entry_id)
+                elif col == 'name':
+                    values.append(name)
+                elif col == 'description':
+                    values.append(description[:100])
+                elif col == 'type':
+                    values.append(entry['type'])
+                else:
+                    values.append('null')
+
+            self.tree.insert('', 'end', iid=idx, values=values)
 
     def sort_by(self, column):
         reverse = (self.sort_column == column and not self.sort_reverse)
@@ -215,10 +254,17 @@ class ModViewerApp(tk.Tk):
             index = int(selected[0])
             entry = self.filtered_data[index]
             self.detail_text.delete(1.0, tk.END)
-            self.detail_text.insert(tk.END, f"ID: {entry['id']}\n")
-            self.detail_text.insert(tk.END, f"Name: {entry.get('name', '')}\n")
-            self.detail_text.insert(tk.END, f"Type: {entry['type']}\n")
-            self.detail_text.insert(tk.END, f"Description:\n{entry['description']}\n\n")
+            if self.use_new_order.get():
+                self.detail_text.insert(tk.END, f"Name: {entry.get('name', '')}\n")
+                self.detail_text.insert(tk.END, f"Description:\n{entry.get('description', '')}\n\n")
+                self.detail_text.insert(tk.END, f"ID: {entry['id']}\n")
+                self.detail_text.insert(tk.END, f"Type: {entry['type']}\n\n")
+            else:
+                self.detail_text.insert(tk.END, f"Type: {entry['type']}\n")
+                self.detail_text.insert(tk.END, f"ID: {entry['id']}\n")
+                self.detail_text.insert(tk.END, f"Name: {entry.get('name', '')}\n")
+                self.detail_text.insert(tk.END, f"Description:\n{entry.get('description', '')}\n\n")
+
             self.detail_text.insert(tk.END, f"File: {entry['file']}\n\n")
             self.detail_text.insert(tk.END, json.dumps(entry['full'], indent=2))
 
