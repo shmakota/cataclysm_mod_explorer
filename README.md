@@ -2,6 +2,8 @@
 
 A simple and intuitive Python Tkinter application designed to help you browse, search, and explore Cataclysm: Dark Days Ahead mod JSON files with ease.
 
+Note: Initially vibe coded by me and ChatGPT. Code may not be the best quality!
+
 ![image](https://github.com/user-attachments/assets/f637baec-a53b-48aa-be50-bdc274af78c0)
 
 ---
