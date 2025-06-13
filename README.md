@@ -4,7 +4,8 @@ A simple and intuitive Python Tkinter application designed to help you browse, s
 
 Note: Initially vibe coded by me and ChatGPT. Code may not be the best quality!
 
-![image](https://github.com/user-attachments/assets/f637baec-a53b-48aa-be50-bdc274af78c0)
+![image](https://github.com/user-attachments/assets/50127759-5d9a-4c00-b454-31001045c4f6)
+
 
 ---
 
