@@ -97,13 +97,13 @@ class ModViewerApp(tk.Tk):
         self.sort_column = None
         self.sort_reverse = False
         self.create_widgets()
-
+    
     def create_widgets(self):
+        # Top control bar
         top_frame = tk.Frame(self)
         top_frame.pack(fill='x', padx=10, pady=10)
 
         tk.Button(top_frame, text="Browse Mod Folder", command=self.browse_folder).pack(side='left')
-
         self.path_label = tk.Label(top_frame, text="No folder selected", anchor='w')
         self.path_label.pack(side='left', padx=10)
 
@@ -117,20 +117,22 @@ class ModViewerApp(tk.Tk):
         search_dropdown = ttk.Combobox(search_frame, textvariable=self.search_field, values=search_options, state='readonly', width=12)
         search_dropdown.pack(side='left', padx=(5, 10))
         search_dropdown.bind("<<ComboboxSelected>>", self.update_filter)
+
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self.update_filter)
         search_entry = tk.Entry(search_frame, textvariable=self.search_var)
         search_entry.pack(side='left', fill='x', expand=True)
 
-
         self.count_label = tk.Label(search_frame, text="Entries: 0", anchor='e', fg='gray', font=('Arial', 10, 'italic'))
-        self.count_label.pack(side='right', padx=(5, 0))
+        self.count_label.pack(side='right', padx=(10, 0))
 
-        
-        # Treeview setup
+        # Paned window to split tree and text
+        main_pane = tk.PanedWindow(self, orient=tk.VERTICAL)
+        main_pane.pack(fill='both', expand=True, padx=10, pady=(5, 10))
+
+        # Treeview (top)
+        tree_frame = tk.Frame(main_pane)
         columns = ('type', 'id', 'name', 'description')
-        tree_frame = tk.Frame(self)
-        tree_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         scrollbar = ttk.Scrollbar(tree_frame)
         scrollbar.pack(side='right', fill='y')
@@ -141,12 +143,15 @@ class ModViewerApp(tk.Tk):
         for col in columns:
             self.tree.heading(col, text=col.capitalize(), command=lambda c=col: self.sort_by(c))
             self.tree.column(col, width=150 if col != 'description' else 400, anchor='w')
+
         self.tree.pack(fill='both', expand=True)
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
 
-        # Detail output
-        self.detail_text = tk.Text(self, height=10, wrap='word')
-        self.detail_text.pack(fill='x', padx=10, pady=(0, 10))
+        main_pane.add(tree_frame, stretch='always')
+
+        # Detail view (bottom, resizable)
+        self.detail_text = tk.Text(main_pane, wrap='word')
+        main_pane.add(self.detail_text, height=150)
 
     def browse_folder(self):
         folder = filedialog.askdirectory()
