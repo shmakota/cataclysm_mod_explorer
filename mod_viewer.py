@@ -1,6 +1,7 @@
 import os
 import json
 import tkinter as tk
+import re
 from tkinter import filedialog, ttk
 
 def scan_mod_directory(directory):
@@ -43,13 +44,20 @@ def scan_mod_directory(directory):
                                     name_field = entry.get('name', '')
                                     if isinstance(name_field, dict):
                                         name_str = name_field.get('str', '')
+                                        name_plural = name_field.get('str_pl', '')
                                     else:
                                         name_str = name_field
+                                        name_plural = ''
+
+                                    # Remove color tags from name and name_plural
+                                    name_str = re.sub(r'</?color[^>]*>', '', name_str)
+                                    name_plural = re.sub(r'</?color[^>]*>', '', name_plural)
+
                                     mod_data.append({
                                         'type': entry.get('type', 'unknown'),
                                         'id': entry['id'],
                                         'name': name_str,
-                                        'name_plural': name_field.get('str_pl') if isinstance(name_field, dict) else '',
+                                        'name_plural': name_plural,
                                         'description': entry['description'],
                                         'file': filepath,
                                         'full': entry
@@ -91,11 +99,11 @@ class ModViewerApp(tk.Tk):
         self.create_widgets()
 
     def create_widgets(self):
-        # Top control bar
         top_frame = tk.Frame(self)
         top_frame.pack(fill='x', padx=10, pady=10)
 
         tk.Button(top_frame, text="Browse Mod Folder", command=self.browse_folder).pack(side='left')
+
         self.path_label = tk.Label(top_frame, text="No folder selected", anchor='w')
         self.path_label.pack(side='left', padx=10)
 
@@ -114,6 +122,11 @@ class ModViewerApp(tk.Tk):
         search_entry = tk.Entry(search_frame, textvariable=self.search_var)
         search_entry.pack(side='left', fill='x', expand=True)
 
+
+        self.count_label = tk.Label(search_frame, text="Entries: 0", anchor='e', fg='gray', font=('Arial', 10, 'italic'))
+        self.count_label.pack(side='right', padx=(5, 0))
+
+        
         # Treeview setup
         columns = ('type', 'id', 'name', 'description')
         tree_frame = tk.Frame(self)
@@ -167,6 +180,8 @@ class ModViewerApp(tk.Tk):
 
         self.filtered_data = [e for e in self.mod_data if match(e)]
         self.populate_tree()
+        self.count_label.config(text=f"Entries: {len(self.filtered_data)}")
+
 
     # some of this is definitely redundant, as it should never be null or None
     def populate_tree(self):
