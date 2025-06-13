@@ -40,10 +40,10 @@ def scan_mod_directory(directory):
                                     'full': entry
                                 })
                             else:
-                                if 'id' in entry and 'description' in entry:
+                                 if 'id' in entry and 'description' in entry:
                                     name_field = entry.get('name', '')
                                     if isinstance(name_field, dict):
-                                        name_str = name_field.get('str', '')
+                                        name_str = name_field.get('str') or name_field.get('str_sp', '')
                                         name_plural = name_field.get('str_pl', '')
                                     else:
                                         name_str = name_field
