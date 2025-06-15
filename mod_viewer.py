@@ -45,8 +45,21 @@ def scan_mod_directory(directory):
                                 'full': entry
                             })
                             continue
+                        elif entry_type == 'speech':
+                            speaker = entry.get('speaker', 'Unknown speaker')
+                            sound = entry.get('sound', 'No speech line provided.')
+                            mod_data.append({
+                                'type': 'speech',
+                                'id': entry.get('id', 'null'),
+                                'name': speaker,
+                                'name_plural': '',
+                                'description': sound,
+                                'file': filepath,
+                                'full': entry
+                            })
+                            continue
 
-                        # Everything else is generalized
+                        # Generalized fallback for all other types
                         name = entry.get('name')
                         desc = entry.get('description')
 
@@ -64,6 +77,17 @@ def scan_mod_directory(directory):
                         else:
                             desc_str = str(desc) if desc else ''
 
+                        # Fallback to 'text' field if no name/desc
+                        if not name_str and not desc_str:
+                            fallback_text = entry.get('text', '')
+                            if isinstance(fallback_text, dict):
+                                fallback_text = fallback_text.get('str', '')
+                            if fallback_text:
+                                name_str = fallback_text
+                                desc_str = fallback_text
+                            else:
+                                desc_str = "This type has not yet been fully implemented. Bug the GitHub!"
+
                         name_str = re.sub(r'</?color[^>]*>', '', name_str)
 
                         mod_data.append({
@@ -75,6 +99,7 @@ def scan_mod_directory(directory):
                             'file': filepath,
                             'full': entry
                         })
+
 
             except Exception as e:
                 print(f"[!] Failed to read {filepath}: {e}")
