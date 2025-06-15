@@ -29,6 +29,7 @@ def scan_mod_directory(directory):
                         entry_type = entry.get('type')
                         entry_id = entry.get('id') or entry.get('om_terrain') or 'null'
 
+                        # Handle 'recipe' specially because 'result' is used as ID
                         if entry_type == 'recipe':
                             result = entry.get('result', 'null')
                             category = entry.get('category', '')
@@ -43,63 +44,38 @@ def scan_mod_directory(directory):
                                 'file': filepath,
                                 'full': entry
                             })
+                            continue
 
-                        elif entry_type == 'monstergroup':
-                            name = entry.get('name')
-                            name_str = name.get('str') or name.get('str_sp') if isinstance(name, dict) else name or ''
-                            name_str = re.sub(r'</?color[^>]*>', '', name_str)
-                            mod_data.append({
-                                'type': entry_type,
-                                'id': entry_id,
-                                'name': name_str or None,
-                                'name_plural': '',
-                                'description': None,
-                                'file': filepath,
-                                'full': entry
-                            })
+                        # Everything else is generalized
+                        name = entry.get('name')
+                        desc = entry.get('description')
 
-                        elif entry_type == 'item_group':
-                            mod_data.append({
-                                'type': entry_type,
-                                'id': entry_id,
-                                'name': None,
-                                'name_plural': '',
-                                'description': None,
-                                'file': filepath,
-                                'full': entry
-                            })
+                        # Handle name variations
+                        if isinstance(name, dict):
+                            name_str = name.get('str') or name.get('str_sp', '')
+                            name_plural = name.get('str_pl', '')
+                        else:
+                            name_str = str(name) if name else ''
+                            name_plural = ''
 
-                        elif entry_type == 'mapgen':
-                            om_terrain = entry.get('om_terrain', 'null')
-                            mod_data.append({
-                                'type': 'mapgen',
-                                'id': om_terrain,
-                                'name': om_terrain,
-                                'name_plural': '',
-                                'description': '',
-                                'file': filepath,
-                                'full': entry
-                            })
+                        # Handle description variations
+                        if isinstance(desc, dict):
+                            desc_str = desc.get('str') or ''
+                        else:
+                            desc_str = str(desc) if desc else ''
 
-                        elif 'id' in entry and 'description' in entry:
-                            name_field = entry.get('name', '')
-                            if isinstance(name_field, dict):
-                                name_str = name_field.get('str') or name_field.get('str_sp', '')
-                                name_plural = name_field.get('str_pl', '')
-                            else:
-                                name_str = name_field
-                                name_plural = ''
-                            name_str = re.sub(r'</?color[^>]*>', '', name_str)
+                        name_str = re.sub(r'</?color[^>]*>', '', name_str)
 
-                            mod_data.append({
-                                'type': entry_type or 'unknown',
-                                'id': entry_id,
-                                'name': name_str or None,
-                                'name_plural': name_plural,
-                                'description': entry['description'],
-                                'file': filepath,
-                                'full': entry
-                            })
+                        mod_data.append({
+                            'type': entry_type or 'unknown',
+                            'id': entry_id,
+                            'name': name_str or None,
+                            'name_plural': name_plural,
+                            'description': desc_str,
+                            'file': filepath,
+                            'full': entry
+                        })
+
             except Exception as e:
                 print(f"[!] Failed to read {filepath}: {e}")
 
