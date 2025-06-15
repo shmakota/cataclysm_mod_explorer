@@ -3,6 +3,8 @@ import json
 import tkinter as tk
 import re
 from tkinter import filedialog, ttk
+import subprocess
+import platform
 
 
 def scan_mod_directory(directory):
@@ -63,17 +65,20 @@ def scan_mod_directory(directory):
                         name = entry.get('name')
                         desc = entry.get('description')
 
-                        # Handle name variations
                         if isinstance(name, dict):
                             name_str = name.get('str') or name.get('str_sp', '')
                             name_plural = name.get('str_pl', '')
+                        elif isinstance(name, list):
+                            name_str = ' '.join(str(item) for item in name)
+                            name_plural = ''
                         else:
                             name_str = str(name) if name else ''
                             name_plural = ''
 
-                        # Handle description variations
                         if isinstance(desc, dict):
                             desc_str = desc.get('str') or ''
+                        elif isinstance(desc, list):
+                            desc_str = ' '.join(str(item) for item in desc)
                         else:
                             desc_str = str(desc) if desc else ''
 
@@ -148,6 +153,11 @@ class ModViewerApp(tk.Tk):
         top_frame.pack(fill='x', padx=10, pady=10)
 
         tk.Button(top_frame, text="Browse Mod Folder", command=self.browse_folder).pack(side='left')
+
+        self.open_folder_button = tk.Button(top_frame, text="Open Folder", command=self.open_folder)
+        self.open_folder_button.pack(side='left', padx=5)
+        self.open_folder_button.config(state='disabled')  # disabled until a folder is selected
+
         self.path_label = tk.Label(top_frame, text="No folder selected", anchor='w')
         self.path_label.pack(side='left', padx=10)
 
@@ -205,6 +215,64 @@ class ModViewerApp(tk.Tk):
             self.path_label.config(text=folder)
             self.mod_data = scan_mod_directory(folder)
             self.update_filter()
+
+            # Enable the open folder button
+            self.open_folder_button.config(state='normal')
+
+
+    def open_folder(self):
+        folder = self.path_label.cget("text")
+        if os.path.isdir(folder):
+            self.open_path(folder)
+
+    def open_entry_source(self):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        entry = self.filtered_data[int(selected[0])]
+        filepath = entry.get('file')
+        if filepath and os.path.isfile(filepath):
+            self.open_path(filepath)
+
+    def open_path(self, path):
+        # Open folder or file in system's default file explorer or editor
+        system = platform.system()
+        try:
+            if system == "Windows":
+                subprocess.run(["explorer", path])
+            elif system == "Darwin":  # macOS
+                subprocess.run(["open", path])
+            else:  # Linux and others
+                subprocess.run(["xdg-open", path])
+        except Exception as e:
+            print(f"[!] Failed to open path {path}: {e}")
+
+    def on_select(self, event):
+        selected = self.tree.selection()
+        print(f"Selection changed: {selected}")
+
+        entry = self.filtered_data[idx]
+        self.detail_text.delete(1.0, tk.END)
+
+        if self.use_new_order.get():
+            lines = [
+                f"Name: {entry.get('name', '')}",
+                f"Description:\n{entry.get('description', '')}\n",
+                f"ID: {entry['id']}",
+                f"Type: {entry['type']}\n"
+            ]
+        else:
+            lines = [
+                f"Type: {entry['type']}",
+                f"ID: {entry['id']}",
+                f"Name: {entry.get('name', '')}",
+                f"Description:\n{entry.get('description', '')}\n"
+            ]
+
+        lines.append(f"File: {entry['file']}\n")
+        lines.append(json.dumps(entry['full'], indent=2))
+        self.detail_text.insert(tk.END, "\n".join(lines))
+
 
     def update_filter(self, *_):
         query = self.search_var.get().lower()
