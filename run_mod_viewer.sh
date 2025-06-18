@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# Exit immediately if a command fails
+# Exit on error
 set -e
+
+# Check for argument
+if [ -z "$1" ]; then
+    echo "Usage: $0 /path/to/mod_folder"
+    exit 1
+fi
+
+MOD_PATH="$1"
 
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
@@ -14,5 +22,6 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Launch the script
-python mod_viewer.py
+# Run the mod viewer with the provided path
+python mod_viewer.py "$MOD_PATH"
+

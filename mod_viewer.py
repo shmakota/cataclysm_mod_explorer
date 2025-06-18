@@ -5,6 +5,7 @@ import re
 from tkinter import filedialog, ttk
 import subprocess
 import platform
+import sys
 
 
 def scan_mod_directory(directory):
@@ -63,7 +64,7 @@ def scan_mod_directory(directory):
 
                         # Generalized fallback for all other types
                         name = entry.get('name')
-                        desc = entry.get('description')
+                        desc = entry.get('description') or entry.get('desc')
 
                         if isinstance(name, dict):
                             name_str = name.get('str') or name.get('str_sp', '')
@@ -359,4 +360,16 @@ class ModViewerApp(tk.Tk):
 
 if __name__ == "__main__":
     app = ModViewerApp()
+
+    # Check for command-line argument
+    if len(sys.argv) > 1:
+        folder = sys.argv[1]
+        if os.path.isdir(folder):
+            mod_name = get_mod_name(folder)
+            app.title(f"Cataclysm Mod Explorer: {mod_name or 'Unnamed Mod'}")
+            app.path_label.config(text=folder)
+            app.mod_data = scan_mod_directory(folder)
+            app.update_filter()
+            app.open_folder_button.config(state='normal')
+
     app.mainloop()
